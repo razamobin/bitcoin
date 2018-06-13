@@ -169,8 +169,17 @@ std::string CRPCTable::help(const std::string& strCommand, const JSONRPCRequest&
     {
         const CRPCCommand *pcmd = command.second;
         std::string strMethod = pcmd->name;
-        if ((strCommand != "" || pcmd->category == "hidden") && strMethod != strCommand)
+        if (pcmd->category == "hidden" && strMethod != strCommand)
             continue;
+
+        bool partialMatch = false;
+        if (strCommand != "") {
+            if (strMethod.find(strCommand) == std::string::npos)
+                continue;
+            else if (strMethod != strCommand)
+                partialMatch = true;
+        }
+
         jreq.strMethod = strMethod;
         try
         {
@@ -182,12 +191,12 @@ std::string CRPCTable::help(const std::string& strCommand, const JSONRPCRequest&
         {
             // Help text is returned in an exception
             std::string strHelp = std::string(e.what());
-            if (strCommand == "")
+            if (partialMatch || strCommand == "")
             {
                 if (strHelp.find('\n') != std::string::npos)
                     strHelp = strHelp.substr(0, strHelp.find('\n'));
 
-                if (category != pcmd->category)
+                if (!partialMatch && category != pcmd->category)
                 {
                     if (!category.empty())
                         strRet += "\n";
